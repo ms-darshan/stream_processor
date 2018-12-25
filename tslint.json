@@ -1,0 +1,19 @@
+{
+    "rule": {
+        "semicolon": [
+            true,
+            "always",
+            "ignore-bound-class-methods"
+        ],
+        "no-var-keyword": true,
+        "indent": [
+            true,
+            "spaces"
+        ],
+        "comment-format": [
+            true,
+            "check-space"
+        ],
+        "class-name": true
+    }
+}
