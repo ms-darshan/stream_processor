@@ -33,40 +33,33 @@ export class Feed {
 
 	private genrateCreateMessage(usrName:string, itemName:string, isVrnt:boolean=false) {
 		if(isVrnt)
-			return usrName + " created variant for item " + itemName;
-		return usrName + " created item " + itemName;
+			return usrName + " created variant for item " + itemName + ".";
+		return usrName + " created item " + itemName + ".";
 	}
 
 	private genrateUpdateMessage(usrName:string, atrbtList:any, itemName:string) {
 		let msg = usrName + " updated the attributes ";
 		for(let i=0; i<atrbtList.length; i++) {
-			if(i==0)
-				msg = msg + atrbtList[i]
-			else if(i==atrbtList.length-1)
-				msg = msg + atrbtList[i]
-			else
-				msg = msg + "," + atrbtList[i];
+			msg = msg + atrbtList[i] + ", "
 		}
-		msg = msg + " for the item " + itemName;
+		msg = msg.substring(0, msg.length - 1);
+		msg = msg + " for the item " + itemName + ".";
 		return msg;
 	}
 
 	private generateDeleteMessage(usrName:string, itemName:string, isVrnt:boolean=true) {
 		if (isVrnt)
-			return usrName + " deleted variant of item " + itemName;
-		return usrName + " deleted item " + itemName;
+			return usrName + " deleted variant of item " + itemName + ".";
+		return usrName + " deleted item " + itemName + ".";
 	}
 
 	private generateListOfItmForAtrbt(usrName:string, itmList:any, atribute:string) {
 		let msg = usrName + " updated the attribute " + atribute + " for list of Items ";
 		for(let i=0; i<itmList.length; i++) {
-			if(i==0)
-				msg = msg + itmList[i];
-			else if(i==itmList.length-1)
-				msg = msg + itmList[i];
-			else
-				msg = msg + "," + itmList[i];
+				msg = msg + itmList[i] + ", ";
 		}
+		msg = msg.substring(0, msg.length - 1);
+		msg = msg + ".";
 		return msg;
 	}
 
