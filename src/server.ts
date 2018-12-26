@@ -7,8 +7,8 @@ import { APP_CONFIG, ALLOW_CORS, ENVIRONMENT } from "./settings";
 import { errorHandler } from "./lib/error";
 import { init } from "./boot";
 import { ZoneDetector } from './lib/db';
-import { ItemconsumInstance } from './stream_worker/item_consumer';
-import { VariantconsumInstance } from './stream_worker/variant_consumer';
+import { ItemConsume } from './stream_worker/item_consumer';
+import { VariantConsume } from './stream_worker/variant_consumer';
 
 const port  = APP_CONFIG.PORT || 5050;
 
@@ -36,8 +36,8 @@ init((err: any, app: any) => {
 	//app.use(ZoneDetector);
 	mountRoutes(app);
 	app.use(errorHandler());
-	ItemconsumInstance.strtConsume();
-	VariantconsumInstance.strtConsume();
+	ItemConsume.getInstance().strtConsume()
+	VariantConsume.getInstance().strtConsume();
 	const server= http.createServer(app);
 	server.listen(port, (err: any) => {
 		if (err) {

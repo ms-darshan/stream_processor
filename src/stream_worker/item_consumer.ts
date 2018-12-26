@@ -1,8 +1,22 @@
 import { Consumer } from "../lib/consumer";
 import { Client } from "../lib/db";
-import { ENVIRONMENT, FEEDDBNAME } from "../settings";
+import { ENVIRONMENT, FEEDDBNAME, ITEM_TOPIC } from "../settings";
 
 export class ItemConsume {
+	private static instance: ItemConsume;
+	private topic_name:any;
+
+	constructor(topic_name:any) {
+		this.topic_name = topic_name;
+	}
+	
+	static getInstance() {
+		if(!ItemConsume.instance) {	
+			ItemConsume.instance =  new ItemConsume(ITEM_TOPIC);
+		}
+		return ItemConsume.instance;
+	}
+
 	public start_process(data:any) {
 		this.feedGenrtn(data);
 	}
@@ -71,21 +85,16 @@ export class ItemConsume {
 		let itmObject:any = data.item;
 		this.userItemFeedHandler(itmObject);
 	}
-}
 
-let itm_instanse = new ItemConsume();
-let itm_topic    = "item_feed";
-
-export let ItemconsumInstance:any = {
-	consumeCallback : async (dta:any, dataType:string, prdc_time:any) =>{
-		itm_instanse.start_process(dta);
-	},
-
-	errInConsumer : async (err:any) =>{
-		console.log("Error in consuming kafka topic");
-	},
-
-	strtConsume() {
-		new Consumer([itm_topic]).consume(ItemconsumInstance.consumeCallback, ItemconsumInstance.errInConsumer);
+	async consumeCallback(dta:any, dataType:string, prdc_time:any) {
+		ItemConsume.getInstance().start_process(dta);	
 	}
-};
+
+	async errInConsumer(err:any) {
+		console.log("Error in consuming kafka topic ", ItemConsume.getInstance().topic_name, " error ", err);
+	}
+
+	async strtConsume() {
+		new Consumer([this.topic_name]).consume(this.consumeCallback, this.errInConsumer);
+	}
+}
