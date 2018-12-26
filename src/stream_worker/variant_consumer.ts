@@ -1,8 +1,22 @@
 import { Consumer } from "../lib/consumer";
 import { Client } from "../lib/db";
-import { ENVIRONMENT, FEEDDBNAME } from "../settings";
+import { ENVIRONMENT, FEEDDBNAME, VARIANT_TOPIC } from "../settings";
 
-class VariantConsume {
+export class VariantConsume {
+
+	private topic_name:any;
+	private static instance: VariantConsume;
+
+	constructor(topic_name:any) {
+		this.topic_name = topic_name;
+	}
+
+	static getInstance() {
+		if(!VariantConsume.instance) {
+			VariantConsume.instance =  new VariantConsume(VARIANT_TOPIC);
+		}
+		return VariantConsume.instance;
+	}
 
 	public start_process(data:any) {
 		this.feedGenrtn(data);
@@ -72,19 +86,16 @@ class VariantConsume {
 		let varntObject:any = data.variant;;
 		this.userVariantFeedHandler(varntObject);
 	}
+
+	async consumeCallback(dta:any, dataType:string, prdc_time:any) {
+		VariantConsume.getInstance().start_process(dta);
+	}
+
+	async errInConsumer(err:any) {
+		console.log("Error in consuming kafka topic ", VariantConsume.getInstance().topic_name, " error ", err);
+	}
+	
+	async strtConsume() {
+		new Consumer([this.topic_name]).consume(this.consumeCallback, this.errInConsumer);
+	}
 }
-
-const vrnt_instanse = new VariantConsume();
-const vrnt_topic    = "variant_feed";
-
-export const VariantconsumInstance:any = {
-	consumeCallback(dta:any, dataType:string, prdc_time:any) {
-		vrnt_instanse.start_process(dta);
-	},
-	errInConsumer(err:any) {
-		console.log("Error in consuming kafka topic");
-	},
-	strtConsume() {
-		new Consumer([vrnt_topic]).consume(VariantconsumInstance.consumeCallback, VariantconsumInstance.errInConsumer);
-	},
-};
