@@ -6,8 +6,8 @@ export class Feed {
 	async getFeed(payLoad:any, page:number = 0, pageLimit:number=30):Promise<any> {
 		return new Promise((resolve, reject) => {		
 			let query: any = {
-				
 			};
+			
 			query.created = {};
 			query.created.$gte  = new Date(payLoad["startDate"]);
 			//query.created.$lte  = new Date(payLoad["endDate"]);
@@ -39,9 +39,11 @@ export class Feed {
 
 	private genrateUpdateMessage(usrName:string, atrbtList:any, itemName:string) {
 		let msg = usrName + " updated the attributes ";
-		for(let i=0; i<atrbtList.length; i++) {
-			msg = msg + atrbtList[i] + ", "
+		
+		for (let value of atrbtList) {
+			msg = msg + value + ", ";
 		}
+
 		msg = msg.substring(0, msg.length - 1);
 		msg = msg + " for the item " + itemName + ".";
 		return msg;
@@ -55,16 +57,18 @@ export class Feed {
 
 	private generateListOfItmForAtrbt(usrName:string, itmList:any, atribute:string) {
 		let msg = usrName + " updated the attribute " + atribute + " for list of Items ";
-		for(let i=0; i<itmList.length; i++) {
-				msg = msg + itmList[i] + ", ";
+
+		for (let value of itmList) {
+			msg = msg + value + ", ";
 		}
+
 		msg = msg.substring(0, msg.length - 1);
 		msg = msg + ".";
 		return msg;
 	}
 
 	private genrtPericticularActionMessage(action:string, usrName:string, itemName:string, 
-										   atrbtList:any=[], isVrnt:boolean=false) {
+										   atrbtList:any=new Set(), isVrnt:boolean=false) {
 		switch(action) {
 			case "create": 
 				return this.genrateCreateMessage(usrName, itemName, isVrnt);
@@ -74,60 +78,58 @@ export class Feed {
 				return this.generateDeleteMessage(usrName, itemName, isVrnt);
 			case "variant":
 				let msg = "";
-				for(let vrnObj in atrbtList) {
-					if(atrbtList.hasOwnProperty(vrnObj)) {
-						msg = msg + this.genrtPericticularActionMessage(vrnObj, usrName, itemName, 
-															atrbtList[vrnObj], isVrnt=true);
-					}
-				}
+				
+				Object.keys(atrbtList).forEach((vrnt) =>{
+					msg = msg + this.genrtPericticularActionMessage(vrnt, usrName, itemName, atrbtList[vrnt], isVrnt=true);
+				})
+
 				return msg;
 		}
 	}
 
 	private generateAtrbtItemFeed(fdObj:any, usr_name:any) {
-		let feed_mesgs = [];
-		for(let itm in fdObj) {
-			if(fdObj.hasOwnProperty(itm)) {
-				let fedItmObj = fdObj[itm];
-				for(let fdAtrbt in fedItmObj) {
-					if(fedItmObj.hasOwnProperty(fdAtrbt)) {
-						let actnObj = fedItmObj[fdAtrbt];
-						let msg = this.genrtPericticularActionMessage(fdAtrbt, usr_name, itm, actnObj);
-						feed_mesgs.push(msg)
-					}
-				}
-			}
-		}
+		let feed_mesgs:any = [];
+		
+		Object.keys(fdObj).forEach((itm) =>{
+			const itmObj = fdObj[itm];
+			Object.keys(itmObj).forEach((action) =>{
+				const actnObj = itmObj[action];
+				const msg     = this.genrtPericticularActionMessage(action, usr_name, itm, actnObj);
+				feed_mesgs.push(msg)
+			});
+		});
+
 		return feed_mesgs;
 	}
 
 	private genrateItemspecificFeed(fdObj:any, usr_name:any) {
-		let itm_mesgs = [];
-		for(let atrbt in fdObj) {
-			if(fdObj.hasOwnProperty(atrbt)) {
-				let itmObj = fdObj[atrbt];
-				if(itmObj.length>2) {
-					let msg = this.generateListOfItmForAtrbt(usr_name, itmObj, atrbt);
-					itm_mesgs.push(msg);
-				}
+		let itm_mesgs:any = [];
+		
+		Object.keys(fdObj).forEach((atrbt) =>{
+			const itmSet = fdObj[atrbt];
+			if(itmSet.size>2) {
+				const msg = this.generateListOfItmForAtrbt(usr_name, itmSet, atrbt);
+				itm_mesgs.push(msg);
 			}
-		}
+		});
+
 		return itm_mesgs;
 	}
 
 	private generateMessage(feed_data:any):Promise<any> {
 		return new Promise((resolve, reject) => {
 			let feed_mesgs:any = [];
-			for (let usr in feed_data) {
-    			if (feed_data.hasOwnProperty(usr)) {           
-					let feedItem  = feed_data[usr]["Item"];
-					let feedAtrbt = feed_data[usr]["Attribute"];
-					let itmList   = this.generateAtrbtItemFeed(feedItem, usr);
-					feed_mesgs    = feed_mesgs.concat(itmList);
-					let itmSpcMsg = this.genrateItemspecificFeed(feedAtrbt, usr);
-					feed_mesgs = feed_mesgs.concat(itmSpcMsg);
-    			}
-			}
+			
+			Object.keys(feed_data).forEach((usrName) =>{
+				const usrObject = feed_data[usrName];
+				const feedItem  = usrObject["Item"];
+				const feedAtrbt = usrObject["Attribute"];
+				const itmList   = this.generateAtrbtItemFeed(feedItem, usrName);
+				feed_mesgs    = feed_mesgs.concat(itmList);
+				const itmSpcMsg = this.genrateItemspecificFeed(feedAtrbt, usrName);
+				feed_mesgs = feed_mesgs.concat(itmSpcMsg);
+			});
+
 			return resolve(feed_mesgs);
 		});
 	}
@@ -136,6 +138,7 @@ export class Feed {
 		return new Promise((resolve, reject) => {
 			let users:any = {};
 			let fdLngth = feedList.length;
+			
 			for(let i =0; i<fdLngth; i++) {
 				let fdObj = feedList[i];
 				if(!users.hasOwnProperty(fdObj.user_name)) {
@@ -147,14 +150,12 @@ export class Feed {
 					users[fdObj.user_name]["Item"][fdObj.item] = {};
 				if(fdObj.action=="update") {
 					if(!users[fdObj.user_name]["Item"][fdObj.item].hasOwnProperty(fdObj.action))
-						users[fdObj.user_name]["Item"][fdObj.item][fdObj.action] = [];
+						users[fdObj.user_name]["Item"][fdObj.item][fdObj.action] = new Set();
 					for(let i=0; i<fdObj.attribute.length; i++) {
 						if(!users[fdObj.user_name]["Attribute"].hasOwnProperty(fdObj.attribute[i]))
-							users[fdObj.user_name]["Attribute"][fdObj.attribute[i]] = [];
-						if(users[fdObj.user_name]["Item"][fdObj.item][fdObj.action].indexOf(fdObj.attribute[i]) == -1)
-							users[fdObj.user_name]["Item"][fdObj.item][fdObj.action].push(fdObj.attribute[i]);
-						if(users[fdObj.user_name]["Attribute"][fdObj.attribute[i]].indexOf(fdObj.item) == -1)
-							users[fdObj.user_name]["Attribute"][fdObj.attribute[i]].push(fdObj.item);
+							users[fdObj.user_name]["Attribute"][fdObj.attribute[i]] = new Set();
+						users[fdObj.user_name]["Item"][fdObj.item][fdObj.action].add(fdObj.attribute[i]);
+						users[fdObj.user_name]["Attribute"][fdObj.attribute[i]].add(fdObj.item);
 					}
 				}
 				else {
@@ -166,6 +167,7 @@ export class Feed {
 					}
 				}		
 			}
+
 			const msgInstanse: Promise<any> = this.generateMessage(users);
 			msgInstanse.then((data:any)=>{
 				return resolve(data);
