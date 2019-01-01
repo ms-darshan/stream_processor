@@ -10,7 +10,7 @@ export class Feed {
 			
 			query.created = {};
 			query.created.$gte  = new Date(payLoad["startDate"]);
-			//query.created.$lte  = new Date(payLoad["endDate"]);
+			query.created.$lte  = new Date(payLoad["endDate"]);
 			
 			if(payLoad.hasOwnProperty("user_name"))
 				query.user_name = payLoad.user_name;
